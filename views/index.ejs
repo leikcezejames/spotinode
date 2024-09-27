@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Player</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: linear-gradient(135deg, #1db954, #191414);
+      color: white;
+      margin-top: 0;
+      padding-top: 100px;
+      padding-left: 300px;
+      padding-right: 300px;
+      padding-bottom: 100px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #343a40;
+      padding: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 15px;
+    }
+
+    nav a {
+      color: #fff;
+      font-size: 1.1em;
+      margin-right: 20px;
+      text-transform: uppercase;
+    }
+
+    nav a:hover {
+      color: #ffc107;
+    }
+
+    #navbar {
+      margin-left: 700px;
+    }
+
+    .music-container {
+      background-color: #212529;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      margin-bottom: 20px;
+    }
+
+    .music-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #17a2b8;
+      border-radius: 5px;
+      padding: 15px;
+      margin: 10px 0;
+      color: white;
+      transition: background-color 0.3s;
+    }
+
+    .music-item:hover {
+      background-color: #138496;
+    }
+
+    .music-details h2 {
+      font-size: 1.3em;
+    }
+
+    .btn-primary, .btn-danger {
+      padding: 8px 12px;
+      font-size: 1em;
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+      border-radius: 18%;
+    }
+
+    .search-input {
+      padding: 10px;
+      border: 2px solid #343a40;
+      border-radius: 18px;
+      background-color: #fff;
+      color: #000;
+      margin-right: 10px;
+    }
+
+    .search-button {
+      background-color: #ffc107;
+      color: #000;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .search-button:hover {
+      background-color: #e0a800;
+    }
+
+    footer {
+      text-align: center;
+      padding: 10px;
+      background-color: #343a40;
+      color: #ffc107;
+    }
+  </style>
+</head>
+<body>
+  <header class="d-flex align-items-center">
+    <img src="/logo.png" alt="Spotify Logo" class="logo">
+    <h4>Spotinode</h4>
+    <nav id="navbar">
+      <a href="/" title="Home"><i class="fas fa-home"></i></a>
+      <a href="/library" title="Library"><i class="fas fa-folder"></i></a>
+      <a href="/upload" title="Upload"><i class="fas fa-upload"></i></a>
+
+      <input type="text" class="search-input" placeholder="Search by title..." id="searchInput" oninput="searchMusic()">
+      <button class="search-button" onclick="searchMusic()">
+        <i class="fas fa-search"></i>
+      </button>
+    </nav>
+  </header>
+  
+  <main class="container mt-5">
+    <h3 class="text-center">Song List</h3>
+
+    <div class="music-container">
+      <ul class="list-unstyled" id="musicList">
+        <% if (musicList && musicList.length) { %>
+          <% musicList.forEach(music => { %>
+            <li class="music-item" data-id="<%= music.id %>">
+              <div class="music-details">
+                <h2 class="music-title"><%= music.title %></h2>
+                <audio controls>
+                  <source src="<%= music.file_path %>" type="audio/mpeg">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+              <div class="d-flex flex-column">
+                <form action="/add-to-playlist" method="POST" class="mr-3">
+                  <input type="hidden" name="musicId" value="<%= music.id %>">
+                  <select name="playlistId" required class="form-control mb-2"> <!-- Added margin-bottom -->
+                    <option value="" disabled selected>Select Playlist</option>
+                    <% playlists.forEach(playlist => { %>
+                      <option value="<%= playlist.id %>"><%= playlist.name %></option>
+                    <% }); %>
+                  </select>
+                  <div class="d-flex">
+                    <button type="submit" class="btn btn-primary mr-2"> <!-- Added margin-right -->
+                      <i class="fas fa-plus button-icon"></i>
+                    </button>
+                    <button class="btn btn-danger" onclick="deleteMusic('<%= music.id %>', this)">
+                      <i class="fas fa-trash button-icon"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </li>
+          <% }); %>
+        <% } else { %>
+          <li class="text-center">No music available.</li>
+        <% } %>
+      </ul>
+    </div>
+  </main>
+
+  <footer class="mt-5">
+    <p>&copy; 2024 Music Player | All Rights Reserved</p>
+  </footer>
+
+  <!-- JavaScript -->
+  <script>
+    function deleteMusic(musicId, btn) {
+      if (confirm('Are you sure you want to delete this music?')) {
+        fetch('/delete-music', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ musicId: musicId }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.message === 'Music deleted successfully') {
+            const musicItem = btn.closest('.music-item');
+            musicItem.remove();
+          } else {
+            alert('Error deleting music: ' + data.message);
+          }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+          alert('An error occurred while trying to delete music.');
+        });
+      }
+    }
+
+    function searchMusic() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      const musicItems = document.querySelectorAll('.music-item');
+
+      musicItems.forEach(item => {
+        const title = item.querySelector('.music-title').textContent.toLowerCase();
+        if (title.includes(input)) {
+          item.style.display = ''; // Show item if title matches
+        } else {
+          item.style.display = 'none'; // Hide item if title does not match
+        }
+      });
+
+      // Reset the display if the input is empty
+      if (!input) {
+        musicItems.forEach(item => {
+          item.style.display = ''; // Show all items
+        });
+      }
+    }
+  </script>
+  
+  <!-- Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
